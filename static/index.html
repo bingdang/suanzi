@@ -280,6 +280,24 @@
         </div>
         
         <div class="card">
+            <h2>🌍 全站统计</h2>
+            <div class="stats-demo">
+                <div class="stat-item">
+                    <div class="label">已服务站点数</div>
+                    <div class="value"><span id="global_sites">-</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">累计总 PV</div>
+                    <div class="value"><span id="global_pv">-</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">累计总 UV</div>
+                    <div class="value"><span id="global_uv">-</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
             <h2>✨ 功能特性</h2>
             <div class="features">
                 <div class="feature">
@@ -388,5 +406,24 @@ Response: { "count": 1234 }
     
     <!-- 蒜子计数脚本 -->
     <script async src="//suanzi.cakepanit.com/js/suanzi.min.js"></script>
+    
+    <!-- 加载全局统计 -->
+    <script>
+    fetch('/api/stats')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            var sitesEl = document.getElementById('global_sites');
+            var pvEl = document.getElementById('global_pv');
+            var uvEl = document.getElementById('global_uv');
+            if (sitesEl) sitesEl.textContent = data.sites.toLocaleString();
+            if (pvEl) pvEl.textContent = data.total_pv.toLocaleString();
+            if (uvEl) uvEl.textContent = data.total_uv.toLocaleString();
+        })
+        .catch(function(error) {
+            console.log('加载全局统计失败:', error);
+        });
+    </script>
 </body>
 </html>

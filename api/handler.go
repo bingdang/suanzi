@@ -382,3 +382,60 @@ func InitHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// StatsHandler 返回统计信息（站点总数等）
+func StatsHandler(w http.ResponseWriter, r *http.Request) {
+	// 处理 OPTIONS 预检请求
+	if r.Method == http.MethodOptions {
+		setCORSHeaders(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	
+	// 设置 CORS 头
+	setCORSHeaders(w)
+
+	dbConn := db.GetDB()
+	if dbConn == nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// 获取站点总数
+	var siteCount int
+	err := dbConn.QueryRow("SELECT COUNT(*) FROM sites").Scan(&siteCount)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// 获取总 PV 数
+	var totalPV int
+	err = dbConn.QueryRow("SELECT COALESCE(SUM(count), 0) FROM counters WHERE type IN ('site_pv', 'page_pv')").Scan(&totalPV)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// 获取总 UV 数
+	var totalUV int
+	err = dbConn.QueryRow("SELECT COALESCE(SUM(count), 0) FROM counters WHERE type = 'site_uv'").Scan(&totalUV)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]int{
+		"sites": siteCount,
+		"total_pv": totalPV,
+		"total_uv": totalUV,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

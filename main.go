@@ -23,6 +23,7 @@ func main() {
 	// 注册路由
 	http.HandleFunc("/api/count", api.CountHandler)
 	http.HandleFunc("/api/init", api.InitHandler)
+	http.HandleFunc("/api/stats", api.StatsHandler)
 	
 	// 静态文件服务（使用绝对路径）
 	staticDir := "/data/suanzi/src/static"
