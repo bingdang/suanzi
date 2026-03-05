@@ -32,13 +32,14 @@ func main() {
 	})
 	http.HandleFunc("/api/init", api.InitHandler)
 	
-	// 静态文件服务
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./static"))))
+	// 静态文件服务（使用绝对路径）
+	staticDir := "/data/suanzi/src/static"
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir(staticDir))))
 	
 	// 根路径返回介绍页面
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			http.ServeFile(w, r, "./static/index.html")
+			http.ServeFile(w, r, staticDir+"/index.html")
 		} else {
 			http.NotFound(w, r)
 		}
