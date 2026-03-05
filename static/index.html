@@ -3,114 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>不蒜子 - 极简网页计数器</title>
+    <title>蒜子 - 极简网页计数器</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #6b7280;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9f9f9;
         }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 80px 20px;
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 2.5em;
         }
-        .subtitle {
-            text-align: center;
-            font-size: 1.2em;
-            color: #7f8c8d;
-            margin-bottom: 40px;
-        }
-        .code-block {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 20px 0;
-            overflow-x: auto;
-            font-family: monospace;
-        }
-        .example {
-            margin: 30px 0;
-        }
-        .example-title {
-            font-weight: bold;
+        
+        .header h1 {
+            font-size: 3em;
+            font-weight: 700;
             margin-bottom: 10px;
-            color: #2c3e50;
+            letter-spacing: -1px;
         }
+        
+        .header .subtitle {
+            font-size: 1.3em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        h2 {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            color: var(--text);
+            font-weight: 600;
+        }
+        
+        h3 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: var(--text);
+            font-weight: 600;
+        }
+        
+        p {
+            color: var(--text-light);
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        
+        .code-block code {
+            color: #94a3b8;
+        }
+        
+        .code-block .tag {
+            color: #f472b6;
+        }
+        
+        .code-block .attr {
+            color: #60a5fa;
+        }
+        
+        .code-block .value {
+            color: #34d399;
+        }
+        
         .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+        
+        .feature {
+            text-align: center;
+            padding: 30px 20px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+        
+        .feature .icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .feature h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .feature p {
+            margin: 0;
+            font-size: 0.95em;
+        }
+        
+        .stats-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
             margin: 30px 0;
         }
-        .feature-item {
-            margin: 10px 0;
-            padding-left: 20px;
-            position: relative;
+        
+        .stat-item {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--primary);
         }
-        .feature-item:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #27ae60;
-            font-weight: bold;
+        
+        .stat-item .label {
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-bottom: 10px;
         }
+        
+        .stat-item .value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 15px 35px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
         .footer {
             text-align: center;
+            color: var(--text-light);
+            padding: 40px 20px;
+            border-top: 1px solid var(--border);
             margin-top: 40px;
-            color: #7f8c8d;
-            font-style: italic;
+        }
+        
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 600px) {
+            .header {
+                padding: 60px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .card {
+                padding: 25px 20px;
+            }
+            
+            .code-block {
+                padding: 15px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>🧄 蒜子</h1>
+        <div class="subtitle">极简网页计数器 · 两行代码搞定</div>
+    </div>
+    
     <div class="container">
-        <h1>不蒜子</h1>
-        <div class="subtitle">极简网页计数器</div>
-        
-        <p>两行代码搞定计数，永久免费使用。</p>
-        
-        <div class="example">
-            <div class="example-title">快速开始：</div>
+        <div class="card">
+            <h2>🚀 快速开始</h2>
+            <p>只需在你的网站中添加以下两行代码，即可显示访问量统计：</p>
+            
             <div class="code-block">
-&lt;script async src="//suanzi.cakepanit.com/js/busuanzi.min.js"&gt;&lt;/script&gt;
-&lt;span id="busuanzi_container_site_pv"&gt;本站总访问量&lt;span id="busuanzi_value_site_pv"&gt;&lt;/span&gt;次&lt;/span&gt;
+<span class="tag">&lt;script</span> <span class="attr">async</span> <span class="attr">src</span>=<span class="value">"//suanzi.cakepanit.com/js/busuanzi.min.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+<span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="value">"busuanzi_container_site_pv"</span><span class="tag">&gt;</span>本站总访问量<span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="value">"busuanzi_value_site_pv"</span><span class="tag">&gt;&lt;/span&gt;</span>次<span class="tag">&lt;/span&gt;</span>
+            </div>
+            
+            <h3>📊 实时统计效果</h3>
+            <div class="stats-demo">
+                <div class="stat-item">
+                    <div class="label">本站总访问量</div>
+                    <div class="value"><span id="busuanzi_value_site_pv">-</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">本站总访客数</div>
+                    <div class="value"><span id="busuanzi_value_site_uv">-</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">本文阅读量</div>
+                    <div class="value"><span id="busuanzi_value_page_pv">-</span></div>
+                </div>
             </div>
         </div>
         
-        <div class="features">
-            <div class="example-title">支持的计数类型：</div>
-            <div class="feature-item">站点总访问量 (site_pv) - 统计整个网站的页面浏览量</div>
-            <div class="feature-item">站点总访客数 (site_uv) - 统计整个网站的独立访客数</div>
-            <div class="feature-item">单页面阅读量 (page_pv) - 统计当前页面的浏览量</div>
-        </div>
-        
-        <div class="example">
-            <div class="example-title">使用示例：</div>
-            <div class="code-block">
-&lt;!-- 站点总访问量 --&gt;
-&lt;span id="busuanzi_container_site_pv"&gt;本站总访问量&lt;span id="busuanzi_value_site_pv"&gt;&lt;/span&gt;次&lt;/span&gt;
-
-&lt;!-- 站点总访客数 --&gt;
-&lt;span id="busuanzi_container_site_uv"&gt;本站访客数&lt;span id="busuanzi_value_site_uv"&gt;&lt;/span&gt;人次&lt;/span&gt;
-
-&lt;!-- 单页面阅读量 --&gt;
-&lt;span id="busuanzi_container_page_pv"&gt;本文阅读量&lt;span id="busuanzi_value_page_pv"&gt;&lt;/span&gt;次&lt;/span&gt;
+        <div class="card">
+            <h2>✨ 功能特性</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="icon">📈</div>
+                    <h3>site_pv</h3>
+                    <p>站点总访问量统计</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">👥</div>
+                    <h3>site_uv</h3>
+                    <p>站点独立访客数</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">📄</div>
+                    <h3>page_pv</h3>
+                    <p>单页面阅读量统计</p>
+                </div>
             </div>
         </div>
         
-        <div class="footer">
-            永久免费使用 · 不蒜子复刻版
+        <div class="card">
+            <h2>📝 更多用法</h2>
+            
+            <h3>显示站点总访客数</h3>
+            <div class="code-block">
+<span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="value">"busuanzi_container_site_uv"</span><span class="tag">&gt;</span>本站总访客数<span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="value">"busuanzi_value_site_uv"</span><span class="tag">&gt;&lt;/span&gt;</span>人次<span class="tag">&lt;/span&gt;</span>
+            </div>
+            
+            <h3>显示单页面阅读量</h3>
+            <div class="code-block">
+<span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="value">"busuanzi_container_page_pv"</span><span class="tag">&gt;</span>本文阅读量<span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="value">"busuanzi_value_page_pv"</span><span class="tag">&gt;&lt;/span&gt;</span>次<span class="tag">&lt;/span&gt;</span>
+            </div>
+            
+            <p style="margin-top: 25px;">
+                <span class="highlight">💡 提示：</span> 文字内容可以随意修改，只要保留 <code>id</code> 正确即可。
+            </p>
+        </div>
+        
+        <div class="card">
+            <h2>🎯 为什么选择蒜子？</h2>
+            <ul style="color: var(--text-light); line-height: 2; padding-left: 20px;">
+                <li>✅ <strong>极简接入</strong> - 两行代码，1 分钟搞定</li>
+                <li>✅ <strong>永久免费</strong> - 无隐藏费用，无流量限制</li>
+                <li>✅ <strong>精准统计</strong> - 支持 PV/UV 双模式</li>
+                <li>✅ <strong>隐私友好</strong> - 不收集用户隐私数据</li>
+                <li>✅ <strong>高性能</strong> - 基于 Go + SQLite，轻量高效</li>
+            </ul>
         </div>
     </div>
+    
+    <div class="footer">
+        <p>🧄 蒜子 · 永久免费使用</p>
+        <p style="margin-top: 10px; font-size: 0.9em;">
+            <a href="https://github.com/openclaw/openclaw" target="_blank">GitHub</a> · 
+            <a href="http://suanzi.cakepanit.com/js/busuanzi.min.js" target="_blank">JS 脚本</a>
+        </p>
+    </div>
+    
+    <!-- 蒜子计数脚本 -->
+    <script async src="//suanzi.cakepanit.com/js/busuanzi.min.js"></script>
 </body>
 </html>
