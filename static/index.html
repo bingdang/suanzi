@@ -429,6 +429,7 @@ Response: {
                         <li><strong>UV 去重：</strong>同一用户（相同 UUID）每天只计 1 次 UV，刷新页面不会重复计算</li>
                         <li><strong>PV 计数：</strong>每次页面加载都会增加 PV，刷新会累加</li>
                         <li><strong>自动联动：</strong>请求 <code>page_pv</code> 时后端会自动同时增加 <code>site_pv</code>，无需重复请求</li>
+                        <li><strong>Referer 校验：</strong>请求的 Referer 域名必须与 <code>domain</code> 参数一致，防止恶意刷量</li>
                     </ul>
                 </div>
             </div>
