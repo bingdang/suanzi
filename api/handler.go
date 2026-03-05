@@ -28,6 +28,11 @@ type CountResponse struct {
 }
 
 func CountHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		QueryHandler(w, r)
+		return
+	}
+	
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return

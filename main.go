@@ -33,7 +33,7 @@ func main() {
 	http.HandleFunc("/api/init", api.InitHandler)
 	
 	// 静态文件服务
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./static"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./src/static"))))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			// 介绍页面（后续实现）
