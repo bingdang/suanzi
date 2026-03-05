@@ -390,14 +390,17 @@ POST /api/count
 Body: {
   "domain": "example.com",
   "uuid": "xxx-xxx-xxx",
-  "types": ["site_pv", "site_uv"]
+  "path": "/article/123",
+  "types": ["site_pv", "site_uv", "page_pv"]
 }
 Response: {
   "counts": {
     "site_pv": 1234,
-    "site_uv": 567
+    "site_uv": 567,
+    "page_pv": 89
   }
 }
+<span class="tag">#</span> <span class="value">💡 提示：请求 page_pv 时会自动同时增加 site_pv</span>
 
 <span class="tag">#</span> <span class="value">全站统计接口（GET）</span>
 GET /api/stats
