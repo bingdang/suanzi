@@ -12,18 +12,18 @@ import (
 
 var DB *sql.DB
 
-func InitDB() {
+func InitDB() error {
 	// 确保 data 目录存在
 	dataDir := filepath.Join("..", "data")
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		log.Fatal("无法创建 data 目录:", err)
+		return fmt.Errorf("无法创建 data 目录：%v", err)
 	}
 
 	dbPath := filepath.Join(dataDir, "suanzi.db")
 	var err error
 	DB, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Fatal("无法打开数据库:", err)
+		return fmt.Errorf("无法打开数据库：%v", err)
 	}
 
 	// 设置连接池
@@ -32,6 +32,7 @@ func InitDB() {
 
 	// 创建表
 	createTables()
+	return nil
 }
 
 func createTables() {
@@ -72,4 +73,8 @@ func createTables() {
 	}
 
 	fmt.Println("数据库表创建成功")
+}
+
+func GetDB() *sql.DB {
+	return DB
 }

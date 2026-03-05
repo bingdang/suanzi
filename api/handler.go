@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"/data/suanzi/src/db"
+	"suanzi/db"
 )
 
 type CountRequest struct {
