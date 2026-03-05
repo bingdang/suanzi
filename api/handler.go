@@ -414,9 +414,9 @@ func StatsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 获取总 PV 数
+	// 获取总 PV 数（只算 site_pv，避免和 page_pv 重复计算）
 	var totalPV int
-	err = dbConn.QueryRow("SELECT COALESCE(SUM(count), 0) FROM counters WHERE type IN ('site_pv', 'page_pv')").Scan(&totalPV)
+	err = dbConn.QueryRow("SELECT COALESCE(SUM(count), 0) FROM counters WHERE type = 'site_pv'").Scan(&totalPV)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
