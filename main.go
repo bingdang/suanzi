@@ -34,9 +34,10 @@ func main() {
 	
 	// 静态文件服务
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./static"))))
+	
+	// 根路径返回介绍页面
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			// 返回介绍页面
 			http.ServeFile(w, r, "./static/index.html")
 		} else {
 			http.NotFound(w, r)
