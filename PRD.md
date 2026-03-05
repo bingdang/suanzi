@@ -1,8 +1,8 @@
-# 不蒜子复刻项目 - 需求文档
+# 蒜子计数器项目 - 需求文档
 
 ## 项目概述
 
-复刻不蒜子（busuanzi.ibruce.info）极简网页计数器服务。
+复刻不蒜子（busuanzi.ibruce.info）极简网页计数器服务，命名为"蒜子"（Suanzi）。
 
 ## 技术栈
 
@@ -79,7 +79,7 @@ Body: {
 
 ```
 GET / - 介绍页面（类似 busuanzi.ibruce.info）
-GET /js/busuanzi.min.js - 计数脚本
+GET /js/suanzi.min.js - 计数脚本
 ```
 
 ## 数据库设计
@@ -126,9 +126,9 @@ CREATE TABLE uv_records (
 2. 页面加载时调用 `/api/count` 记录 PV/UV
 3. 查询计数值并回填到页面 span 标签
 4. 支持的标签 ID：
-   - `busuanzi_value_site_pv` - 站点总访问量
-   - `busuanzi_value_site_uv` - 站点总访客数
-   - `busuanzi_value_page_pv` - 单页面阅读量
+   - `suanzi_value_site_pv` - 站点总访问量
+   - `suanzi_value_site_uv` - 站点总访客数
+   - `suanzi_value_page_pv` - 单页面阅读量
 
 ## 部署配置
 
