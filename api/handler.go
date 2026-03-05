@@ -10,11 +10,13 @@ import (
 	"suanzi/db"
 )
 
+// CountRequest 支持单类型和批量类型两种模式
 type CountRequest struct {
-	Domain string `json:"domain"`
-	Type   string `json:"type"`
-	Path   string `json:"path"`
-	UUID   string `json:"uuid"`
+	Domain string   `json:"domain"`
+	Type   string   `json:"type"`    // 单类型模式
+	Path   string   `json:"path"`
+	UUID   string   `json:"uuid"`
+	Types  []string `json:"types"`   // 批量模式
 }
 
 type InitRequest struct {
@@ -25,7 +27,8 @@ type InitRequest struct {
 }
 
 type CountResponse struct {
-	Count int `json:"count"`
+	Count  int            `json:"count"`
+	Counts map[string]int `json:"counts,omitempty"` // 批量模式返回
 }
 
 // validateReferer 检查 Referer 是否合法
@@ -54,6 +57,59 @@ func validateReferer(r *http.Request, domain string) bool {
 	return false
 }
 
+// incrementCounter 增加计数器
+func incrementCounter(dbConn *sql.DB, siteID int, counterType string, path string) error {
+	_, err := dbConn.Exec("INSERT INTO counters (site_id, type, path, count) VALUES (?, ?, ?, 1) ON CONFLICT(site_id, type, path) DO UPDATE SET count = count + 1, updated_at = CURRENT_TIMESTAMP", siteID, counterType, path)
+	return err
+}
+
+// recordUV 记录 UV（按天去重）
+func recordUV(dbConn *sql.DB, siteID int, uuid string) error {
+	today := time.Now().Format("2006-01-02")
+	
+	// 检查是否已存在
+	var exists bool
+	err := dbConn.QueryRow("SELECT EXISTS(SELECT 1 FROM uv_records WHERE site_id = ? AND uuid = ? AND date = ?)", siteID, uuid, today).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if !exists && uuid != "" {
+		// 记录新 UV
+		_, err := dbConn.Exec("INSERT INTO uv_records (site_id, uuid, date) VALUES (?, ?, ?)", siteID, uuid, today)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// getCounterValue 获取计数值
+func getCounterValue(dbConn *sql.DB, siteID int, counterType string, path string) (int, error) {
+	var count int
+	err := dbConn.QueryRow("SELECT count FROM counters WHERE site_id = ? AND type = ? AND path = ?", siteID, counterType, path).Scan(&count)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return count, err
+}
+
+// getOrCreateSite 获取或创建站点
+func getOrCreateSite(dbConn *sql.DB, domain string) (int, error) {
+	var siteID int
+	err := dbConn.QueryRow("SELECT id FROM sites WHERE domain = ?", domain).Scan(&siteID)
+	if err == sql.ErrNoRows {
+		// Create new site
+		result, err := dbConn.Exec("INSERT INTO sites (domain) VALUES (?)", domain)
+		if err != nil {
+			return 0, err
+		}
+		siteID64, _ := result.LastInsertId()
+		return int(siteID64), nil
+	}
+	return siteID, err
+}
+
 func CountHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		QueryHandler(w, r)
@@ -71,8 +127,8 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Domain == "" || req.Type == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+	if req.Domain == "" {
+		http.Error(w, "Missing required field: domain", http.StatusBadRequest)
 		return
 	}
 
@@ -89,54 +145,68 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get or create site
-	var siteID int
-	err := dbConn.QueryRow("SELECT id FROM sites WHERE domain = ?", req.Domain).Scan(&siteID)
-	if err == sql.ErrNoRows {
-		// Create new site
-		result, err := dbConn.Exec("INSERT INTO sites (domain) VALUES (?)", req.Domain)
-		if err != nil {
-			http.Error(w, "Failed to create site", http.StatusInternalServerError)
-			return
-		}
-		siteID64, _ := result.LastInsertId()
-		siteID = int(siteID64)
-	} else if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+	siteID, err := getOrCreateSite(dbConn, req.Domain)
+	if err != nil {
+		http.Error(w, "Failed to get or create site", http.StatusInternalServerError)
 		return
 	}
 
-	// Handle UV counting
-	if req.Type == "site_uv" {
-		// Check if this UUID already counted today
-		today := time.Now().Format("2006-01-02")
-		var exists bool
-		err := dbConn.QueryRow("SELECT EXISTS(SELECT 1 FROM uv_records WHERE site_id = ? AND uuid = ? AND date = ?)", siteID, req.UUID, today).Scan(&exists)
-		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
-			return
-		}
-
-		if !exists && req.UUID != "" {
-			// Record new UV
-			_, err := dbConn.Exec("INSERT INTO uv_records (site_id, uuid, date) VALUES (?, ?, ?)", siteID, req.UUID, today)
-			if err != nil {
-				http.Error(w, "Failed to record UV", http.StatusInternalServerError)
-				return
+	// 批量模式：处理 types 数组
+	if len(req.Types) > 0 {
+		counts := make(map[string]int)
+		
+		for _, counterType := range req.Types {
+			// UV 特殊处理
+			if counterType == "site_uv" {
+				if err := recordUV(dbConn, siteID, req.UUID); err != nil {
+					http.Error(w, "Failed to record UV", http.StatusInternalServerError)
+					return
+				}
 			}
-			// Increment counter
-			_, err = dbConn.Exec("INSERT INTO counters (site_id, type, path, count) VALUES (?, ?, ?, 1) ON CONFLICT(site_id, type, path) DO UPDATE SET count = count + 1, updated_at = CURRENT_TIMESTAMP", siteID, req.Type, req.Path)
-			if err != nil {
+			
+			// 增加计数器
+			path := req.Path
+			if counterType != "page_pv" {
+				path = ""
+			}
+			if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
 				http.Error(w, "Failed to update counter", http.StatusInternalServerError)
 				return
 			}
+			
+			// 获取计数值
+			count, err := getCounterValue(dbConn, siteID, counterType, path)
+			if err != nil {
+				http.Error(w, "Failed to get counter value", http.StatusInternalServerError)
+				return
+			}
+			counts[counterType] = count
 		}
-	} else {
-		// Handle PV counting
-		_, err := dbConn.Exec("INSERT INTO counters (site_id, type, path, count) VALUES (?, ?, ?, 1) ON CONFLICT(site_id, type, path) DO UPDATE SET count = count + 1, updated_at = CURRENT_TIMESTAMP", siteID, req.Type, req.Path)
-		if err != nil {
-			http.Error(w, "Failed to update counter", http.StatusInternalServerError)
+
+		// 返回批量结果
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(CountResponse{Counts: counts})
+		return
+	}
+
+	// 单类型模式：向后兼容
+	if req.Type == "" {
+		http.Error(w, "Missing required field: type or types", http.StatusBadRequest)
+		return
+	}
+
+	// UV 特殊处理
+	if req.Type == "site_uv" {
+		if err := recordUV(dbConn, siteID, req.UUID); err != nil {
+			http.Error(w, "Failed to record UV", http.StatusInternalServerError)
 			return
 		}
+	}
+
+	// 增加计数器
+	if err := incrementCounter(dbConn, siteID, req.Type, req.Path); err != nil {
+		http.Error(w, "Failed to update counter", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -176,11 +246,8 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var count int
-	err = dbConn.QueryRow("SELECT count FROM counters WHERE site_id = ? AND type = ? AND path = ?", siteID, counterType, path).Scan(&count)
-	if err == sql.ErrNoRows {
-		count = 0
-	} else if err != nil {
+	count, err := getCounterValue(dbConn, siteID, counterType, path)
+	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
@@ -214,18 +281,9 @@ func InitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get or create site
-	var siteID int
-	err := dbConn.QueryRow("SELECT id FROM sites WHERE domain = ?", req.Domain).Scan(&siteID)
-	if err == sql.ErrNoRows {
-		result, err := dbConn.Exec("INSERT INTO sites (domain) VALUES (?)", req.Domain)
-		if err != nil {
-			http.Error(w, "Failed to create site", http.StatusInternalServerError)
-			return
-		}
-		siteID64, _ := result.LastInsertId()
-		siteID = int(siteID64)
-	} else if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+	siteID, err := getOrCreateSite(dbConn, req.Domain)
+	if err != nil {
+		http.Error(w, "Failed to get or create site", http.StatusInternalServerError)
 		return
 	}
 
