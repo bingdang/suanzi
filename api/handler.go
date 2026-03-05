@@ -112,7 +112,21 @@ func getOrCreateSite(dbConn *sql.DB, domain string) (int, error) {
 	return siteID, err
 }
 
+// setCORSHeaders 设置 CORS 跨域头
+func setCORSHeaders(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+
 func CountHandler(w http.ResponseWriter, r *http.Request) {
+	// 处理 OPTIONS 预检请求
+	if r.Method == http.MethodOptions {
+		setCORSHeaders(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method == http.MethodGet {
 		QueryHandler(w, r)
 		return
@@ -122,6 +136,9 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	
+	// 设置 CORS 头
+	setCORSHeaders(w)
 
 	var req CountRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -230,10 +247,20 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func QueryHandler(w http.ResponseWriter, r *http.Request) {
+	// 处理 OPTIONS 预检请求
+	if r.Method == http.MethodOptions {
+		setCORSHeaders(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	
+	// 设置 CORS 头
+	setCORSHeaders(w)
 
 	domain := r.URL.Query().Get("domain")
 	counterType := r.URL.Query().Get("type")
@@ -275,10 +302,20 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitHandler(w http.ResponseWriter, r *http.Request) {
+	// 处理 OPTIONS 预检请求
+	if r.Method == http.MethodOptions {
+		setCORSHeaders(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	
+	// 设置 CORS 头
+	setCORSHeaders(w)
 
 	var req InitRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
