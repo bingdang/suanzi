@@ -174,7 +174,34 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 	if len(req.Types) > 0 {
 		counts := make(map[string]int)
 		
-		for _, counterType := range req.Types {
+		// 检查是否有 page_pv，如果有则需要同时增加 site_pv
+		hasPagePV := false
+		for _, t := range req.Types {
+			if t == "page_pv" {
+				hasPagePV = true
+				break
+			}
+		}
+		
+		// 如果有 page_pv 但没有 site_pv，自动添加 site_pv
+		typesToProcess := req.Types
+		if hasPagePV {
+			hasSitePV := false
+			for _, t := range req.Types {
+				if t == "site_pv" {
+					hasSitePV = true
+					break
+				}
+			}
+			if !hasSitePV {
+				// 复制数组并添加 site_pv
+				typesToProcess = make([]string, len(req.Types)+1)
+				copy(typesToProcess, req.Types)
+				typesToProcess[len(req.Types)] = "site_pv"
+			}
+		}
+		
+		for _, counterType := range typesToProcess {
 			path := req.Path
 			if counterType != "page_pv" {
 				path = ""
@@ -202,13 +229,18 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			
-			// 获取计数值
-			count, err := getCounterValue(dbConn, siteID, counterType, path)
-			if err != nil {
-				http.Error(w, "Failed to get counter value", http.StatusInternalServerError)
-				return
+			// 获取计数值（只返回原始请求的类型）
+			for _, originalType := range req.Types {
+				if counterType == originalType {
+					count, err := getCounterValue(dbConn, siteID, counterType, path)
+					if err != nil {
+						http.Error(w, "Failed to get counter value", http.StatusInternalServerError)
+						return
+					}
+					counts[counterType] = count
+					break
+				}
 			}
-			counts[counterType] = count
 		}
 
 		// 返回批量结果
