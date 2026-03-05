@@ -433,6 +433,7 @@ Response: {
 <span class="value">- PV 计数：每次页面加载都会增加 PV，刷新会累加</span>
 <span class="value">- 自动联动：请求 page_pv 时后端会自动同时增加 site_pv，无需重复请求</span>
 <span class="value">- Referer 校验：请求的 Referer 域名必须与 domain 参数一致，防止恶意刷量</span>
+<span class="value">- 内网过滤：自动忽略 127.0.0.1、localhost 和三大内网网段（10.x/172.16-31.x/192.168.x）的访问</span>
 <span class="tag">*/</span></code></pre>
                 </div>
             </div>

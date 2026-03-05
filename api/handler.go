@@ -3,8 +3,10 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"suanzi/db"
@@ -119,6 +121,67 @@ func setCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
+// isInternalIP 检查 IP 是否是内网地址
+// 忽略 127.0.0.1、localhost 和三大内网网段（10.x.x.x、172.16-31.x.x、192.168.x.x）
+func isInternalIP(ip string) bool {
+	// 检查 localhost
+	if ip == "127.0.0.1" || ip == "::1" || strings.ToLower(ip) == "localhost" {
+		return true
+	}
+	
+	// 解析 IP
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+	
+	// 检查是否是内网地址
+	// 10.0.0.0/8
+	if parsedIP.Equal(net.ParseIP("10.0.0.0")) {
+		return true
+	}
+	ip10 := parsedIP.To4()
+	if ip10 != nil && ip10[0] == 10 {
+		return true
+	}
+	
+	// 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
+	ip172 := parsedIP.To4()
+	if ip172 != nil && ip172[0] == 172 && ip172[1] >= 16 && ip172[1] <= 31 {
+		return true
+	}
+	
+	// 192.168.0.0/16
+	ip192 := parsedIP.To4()
+	if ip192 != nil && ip192[0] == 192 && ip192[1] == 168 {
+		return true
+	}
+	
+	return false
+}
+
+// getClientIP 获取客户端真实 IP
+func getClientIP(r *http.Request) string {
+	// 优先检查 X-Forwarded-For（经过代理的情况）
+	xff := r.Header.Get("X-Forwarded-For")
+	if xff != "" {
+		ips := strings.Split(xff, ",")
+		if len(ips) > 0 {
+			return strings.TrimSpace(ips[0])
+		}
+	}
+	
+	// 检查 X-Real-IP
+	xri := r.Header.Get("X-Real-IP")
+	if xri != "" {
+		return xri
+	}
+	
+	// 最后使用 RemoteAddr
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	return ip
+}
+
 func CountHandler(w http.ResponseWriter, r *http.Request) {
 	// 处理 OPTIONS 预检请求
 	if r.Method == http.MethodOptions {
@@ -156,6 +219,10 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid referer", http.StatusForbidden)
 		return
 	}
+
+	// 获取客户端 IP，忽略内网地址的统计
+	clientIP := getClientIP(r)
+	isInternal := isInternalIP(clientIP)
 
 	dbConn := db.GetDB()
 	if dbConn == nil {
@@ -207,25 +274,28 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 				path = ""
 			}
 			
-			// UV 特殊处理：只有新访客才增加计数
-			if counterType == "site_uv" {
-				isNewUV, err := recordUV(dbConn, siteID, req.UUID)
-				if err != nil {
-					http.Error(w, "Failed to record UV", http.StatusInternalServerError)
-					return
-				}
-				if isNewUV {
-					// 新访客，增加 UV 计数
+			// 内网地址不增加计数
+			if !isInternal {
+				// UV 特殊处理：只有新访客才增加计数
+				if counterType == "site_uv" {
+					isNewUV, err := recordUV(dbConn, siteID, req.UUID)
+					if err != nil {
+						http.Error(w, "Failed to record UV", http.StatusInternalServerError)
+						return
+					}
+					if isNewUV {
+						// 新访客，增加 UV 计数
+						if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
+							http.Error(w, "Failed to update counter", http.StatusInternalServerError)
+							return
+						}
+					}
+				} else {
+					// PV 计数：直接增加
 					if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
 						http.Error(w, "Failed to update counter", http.StatusInternalServerError)
 						return
 					}
-				}
-			} else {
-				// PV 计数：直接增加
-				if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
-					http.Error(w, "Failed to update counter", http.StatusInternalServerError)
-					return
 				}
 			}
 			
