@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"time"
 
 	"suanzi/db"
@@ -27,6 +28,32 @@ type CountResponse struct {
 	Count int `json:"count"`
 }
 
+// validateReferer 检查 Referer 是否合法
+// 规则：Referer 的域名必须与请求参数中的 domain 一致
+// 例如：domain=example.com 时，Referer 必须是 https://example.com/xxx
+func validateReferer(r *http.Request, domain string) bool {
+	referer := r.Referer()
+	if referer == "" {
+		// 没有 Referer 的请求可能是直接调用，拒绝
+		return false
+	}
+
+	u, err := url.Parse(referer)
+	if err != nil {
+		return false
+	}
+
+	// 提取 Referer 的主机名
+	refererHost := u.Hostname()
+	
+	// Referer 主机名必须与 domain 参数一致
+	if domain != "" && refererHost == domain {
+		return true
+	}
+
+	return false
+}
+
 func CountHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		QueryHandler(w, r)
@@ -46,6 +73,12 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 
 	if req.Domain == "" || req.Type == "" {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	// 校验 Referer，防止恶意刷量
+	if !validateReferer(r, req.Domain) {
+		http.Error(w, "Invalid referer", http.StatusForbidden)
 		return
 	}
 
