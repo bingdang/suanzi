@@ -385,11 +385,12 @@
             <div style="margin-top: 25px;">
                 <h3>API 接口</h3>
                 <div class="code-block">
-<span class="tag">#</span> <span class="value">非页面请求（如首页）</span>
+<span class="tag">#</span> <span class="value">首页或普通页面（统计站点访问）</span>
 POST /api/count
 Body: {
   "domain": "example.com",
   "uuid": "xxx-xxx-xxx",
+  "path": "/",
   "types": ["site_pv", "site_uv"]
 }
 Response: {
@@ -399,7 +400,7 @@ Response: {
   }
 }
 
-<span class="tag">#</span> <span class="value">页面请求（如文章页）</span>
+<span class="tag">#</span> <span class="value">文章页或详情页（统计页面阅读）</span>
 POST /api/count
 Body: {
   "domain": "example.com",
