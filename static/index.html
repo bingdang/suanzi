@@ -421,6 +421,16 @@ Response: {
 }
 <span class="tag">#</span> <span class="value">💡 提示：请求 page_pv 时会自动同时增加 site_pv</span></code></pre>
                 </div>
+                
+                <div style="margin-top: 20px; color: var(--text-light); line-height: 2;">
+                    <h3 style="margin-bottom: 10px;">📌 说明</h3>
+                    <ul style="padding-left: 20px;">
+                        <li><strong>UUID 生成：</strong>首次访问时自动生成 UUID 并存入 Cookie（有效期 1 年），后续访问自动读取</li>
+                        <li><strong>UV 去重：</strong>同一用户（相同 UUID）每天只计 1 次 UV，刷新页面不会重复计算</li>
+                        <li><strong>PV 计数：</strong>每次页面加载都会增加 PV，刷新会累加</li>
+                        <li><strong>自动联动：</strong>请求 <code>page_pv</code> 时后端会自动同时增加 <code>site_pv</code>，无需重复请求</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
