@@ -328,13 +328,61 @@
                 <li>✅ <strong>高性能</strong> - 基于 Go + SQLite，轻量高效</li>
             </ul>
         </div>
+        
+        <div class="card">
+            <h2>🔧 技术实现</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="icon">⚡</div>
+                    <h3>后端</h3>
+                    <p>Go + Gin 框架</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">💾</div>
+                    <h3>数据库</h3>
+                    <p>SQLite 轻量存储</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">🌐</div>
+                    <h3>前端</h3>
+                    <p>原生 JavaScript</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">🔐</div>
+                    <h3>UV 识别</h3>
+                    <p>UUID + Cookie</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <h3>工作流程</h3>
+                <ol style="color: var(--text-light); line-height: 2.2; padding-left: 20px;">
+                    <li>页面加载时，JS 脚本自动生成/读取用户 UUID（存 Cookie，有效期 1 年）</li>
+                    <li>调用 <code>POST /api/count</code> 接口，上报 PV/UV 数据</li>
+                    <li>后端查询数据库，返回计数值</li>
+                    <li>前端将计数值回填到对应的 <code>span</code> 标签</li>
+                </ol>
+            </div>
+            
+            <div style="margin-top: 25px;">
+                <h3>API 接口</h3>
+                <div class="code-block">
+<span class="tag">#</span> <span class="value">计数接口（POST）</span>
+POST /api/count
+Body: { "domain": "example.com", "type": "site_pv", "uuid": "xxx" }
+
+<span class="tag">#</span> <span class="value">查询接口（GET）</span>
+GET /api/count?domain=example.com&type=site_pv
+Response: { "count": 1234 }
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="footer">
         <p>🧄 蒜子 · 永久免费使用</p>
         <p style="margin-top: 10px; font-size: 0.9em;">
-            <a href="https://github.com/openclaw/openclaw" target="_blank">GitHub</a> · 
-            <a href="http://suanzi.cakepanit.com/js/busuanzi.min.js" target="_blank">JS 脚本</a>
+            作者博客：<a href="https://cakepanit.com" target="_blank">cakepanit.com</a>
         </p>
     </div>
     
