@@ -385,18 +385,30 @@
             <div style="margin-top: 25px;">
                 <h3>API 接口</h3>
                 <div class="code-block">
-<span class="tag">#</span> <span class="value">批量计数接口（POST）</span>
+<span class="tag">#</span> <span class="value">非页面请求（如首页）</span>
+POST /api/count
+Body: {
+  "domain": "example.com",
+  "uuid": "xxx-xxx-xxx",
+  "types": ["site_pv", "site_uv"]
+}
+Response: {
+  "counts": {
+    "site_pv": 1234,
+    "site_uv": 567
+  }
+}
+
+<span class="tag">#</span> <span class="value">页面请求（如文章页）</span>
 POST /api/count
 Body: {
   "domain": "example.com",
   "uuid": "xxx-xxx-xxx",
   "path": "/article/123",
-  "types": ["site_pv", "site_uv", "page_pv"]
+  "types": ["page_pv"]
 }
 Response: {
   "counts": {
-    "site_pv": 1234,
-    "site_uv": 567,
     "page_pv": 89
   }
 }
