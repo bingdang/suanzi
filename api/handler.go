@@ -64,24 +64,26 @@ func incrementCounter(dbConn *sql.DB, siteID int, counterType string, path strin
 }
 
 // recordUV 记录 UV（按天去重）
-func recordUV(dbConn *sql.DB, siteID int, uuid string) error {
+// 返回 isNewUV 表示是否是新访客（今天第一次访问）
+func recordUV(dbConn *sql.DB, siteID int, uuid string) (bool, error) {
 	today := time.Now().Format("2006-01-02")
 	
 	// 检查是否已存在
 	var exists bool
 	err := dbConn.QueryRow("SELECT EXISTS(SELECT 1 FROM uv_records WHERE site_id = ? AND uuid = ? AND date = ?)", siteID, uuid, today).Scan(&exists)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if !exists && uuid != "" {
 		// 记录新 UV
 		_, err := dbConn.Exec("INSERT INTO uv_records (site_id, uuid, date) VALUES (?, ?, ?)", siteID, uuid, today)
 		if err != nil {
-			return err
+			return false, err
 		}
+		return true, nil // 新访客
 	}
-	return nil
+	return false, nil // 老访客，今天已经计过 UV 了
 }
 
 // getCounterValue 获取计数值
@@ -156,22 +158,31 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 		counts := make(map[string]int)
 		
 		for _, counterType := range req.Types {
-			// UV 特殊处理
-			if counterType == "site_uv" {
-				if err := recordUV(dbConn, siteID, req.UUID); err != nil {
-					http.Error(w, "Failed to record UV", http.StatusInternalServerError)
-					return
-				}
-			}
-			
-			// 增加计数器
 			path := req.Path
 			if counterType != "page_pv" {
 				path = ""
 			}
-			if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
-				http.Error(w, "Failed to update counter", http.StatusInternalServerError)
-				return
+			
+			// UV 特殊处理：只有新访客才增加计数
+			if counterType == "site_uv" {
+				isNewUV, err := recordUV(dbConn, siteID, req.UUID)
+				if err != nil {
+					http.Error(w, "Failed to record UV", http.StatusInternalServerError)
+					return
+				}
+				if isNewUV {
+					// 新访客，增加 UV 计数
+					if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
+						http.Error(w, "Failed to update counter", http.StatusInternalServerError)
+						return
+					}
+				}
+			} else {
+				// PV 计数：直接增加
+				if err := incrementCounter(dbConn, siteID, counterType, path); err != nil {
+					http.Error(w, "Failed to update counter", http.StatusInternalServerError)
+					return
+				}
 			}
 			
 			// 获取计数值
@@ -195,10 +206,16 @@ func CountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// UV 特殊处理
+	// UV 特殊处理：只有新访客才增加计数
 	if req.Type == "site_uv" {
-		if err := recordUV(dbConn, siteID, req.UUID); err != nil {
+		isNewUV, err := recordUV(dbConn, siteID, req.UUID)
+		if err != nil {
 			http.Error(w, "Failed to record UV", http.StatusInternalServerError)
+			return
+		}
+		if !isNewUV {
+			// 老访客，今天已经计过 UV 了，不增加计数
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 	}
