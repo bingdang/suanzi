@@ -33,11 +33,11 @@ func main() {
 	http.HandleFunc("/api/init", api.InitHandler)
 	
 	// 静态文件服务
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./src/static"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			// 介绍页面（后续实现）
-			w.Write([]byte("Suanzi Counter Service - 欢迎使用不蒜子复刻版"))
+			// 返回介绍页面
+			http.ServeFile(w, r, "./static/index.html")
 		} else {
 			http.NotFound(w, r)
 		}
